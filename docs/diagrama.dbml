@@ -1,0 +1,106 @@
+// Pega este contenido en https://dbdiagram.io/d y exporta el diagrama (PNG/PDF) a docs/
+// Proyecto: SwapCloset
+
+Table usuarios {
+  id bigserial [pk]
+  username varchar(30) [not null, unique]
+  email varchar(120) [not null, unique]
+  password varchar(100) [not null]
+  fecha_nacimiento date [not null]
+  ciudad varchar(80)
+  biografia varchar(500)
+  talla_camiseta varchar(3) [note: 'XS..XXL']
+  talla_pantalon int [note: '34..50']
+  talla_calzado int [note: '35..46']
+  rol varchar(20) [not null, note: 'ADMIN | MODERADOR | USUARIO']
+  creado_en timestamp [not null]
+  actualizado_en timestamp [not null]
+}
+
+Table estilos {
+  id bigserial [pk]
+  nombre varchar(40) [not null, unique]
+}
+
+Table usuarios_estilos {
+  usuario_id bigint [pk, ref: > usuarios.id]
+  estilo_id bigint [pk, ref: > estilos.id]
+}
+
+Table categorias {
+  id bigserial [pk]
+  nombre varchar(50) [not null, unique]
+}
+
+Table prendas {
+  id bigserial [pk]
+  propietaria_id bigint [not null, ref: > usuarios.id]
+  categoria_id bigint [not null, ref: > categorias.id]
+  estilo_id bigint [not null, ref: > estilos.id]
+  titulo varchar(100) [not null]
+  descripcion varchar(1000)
+  marca varchar(60)
+  talla varchar(10) [not null]
+  estado varchar(25) [not null, note: 'conservación: NUEVA_CON_ETIQUETA | COMO_NUEVA | BUEN_ESTADO | USADA']
+  modalidad varchar(15) [not null, note: 'INTERCAMBIO | PRESTAMO | AMBAS']
+  disponibilidad varchar(15) [not null, note: 'BORRADOR | DISPONIBLE | RESERVADA | PRESTADA']
+  activa boolean [not null, note: 'false = retirada (baja lógica)']
+  creada_en timestamp [not null]
+  actualizada_en timestamp [not null]
+}
+
+Table fotos_prenda {
+  id bigserial [pk]
+  prenda_id bigint [not null, ref: > prendas.id]
+  nombre_original varchar(255) [not null]
+  clave_disco varchar(100) [not null, unique]
+  tipo_contenido varchar(20) [not null]
+  tamano_bytes bigint [not null]
+  orden int [not null, note: '1..5']
+  creada_en timestamp [not null]
+  indexes { (prenda_id, orden) [unique] }
+}
+
+Table solicitudes {
+  id bigserial [pk]
+  tipo varchar(15) [not null, note: 'INTERCAMBIO | PRESTAMO']
+  estado varchar(15) [not null, note: 'PENDIENTE | ACEPTADA | RECHAZADA | CANCELADA | CADUCADA | RETRASADA | FINALIZADA']
+  prenda_id bigint [not null, ref: > prendas.id]
+  solicitante_id bigint [not null, ref: > usuarios.id]
+  propietaria_id bigint [not null, ref: > usuarios.id, note: 'desnormalizada a propósito']
+  prenda_ofrecida_id bigint [ref: > prendas.id, note: 'opcional: solo intercambios']
+  fecha_inicio date [note: 'solo préstamos']
+  fecha_fin date [note: 'solo préstamos']
+  creada_en timestamp [not null]
+  actualizada_en timestamp [not null]
+}
+
+Table mensajes {
+  id bigserial [pk]
+  solicitud_id bigint [not null, ref: > solicitudes.id]
+  autor_id bigint [not null, ref: > usuarios.id]
+  texto varchar(1000) [not null]
+  enviado_en timestamp [not null]
+}
+
+Table valoraciones {
+  id bigserial [pk]
+  solicitud_id bigint [not null, ref: > solicitudes.id]
+  autor_id bigint [not null, ref: > usuarios.id]
+  valorado_id bigint [not null, ref: > usuarios.id]
+  puntuacion int [not null, note: '1..5']
+  comentario varchar(500)
+  creada_en timestamp [not null]
+  indexes { (solicitud_id, autor_id) [unique] }
+}
+
+Table notificaciones {
+  id bigserial [pk]
+  usuario_id bigint [not null, ref: > usuarios.id]
+  tipo varchar(30) [not null]
+  mensaje varchar(255) [not null]
+  recurso varchar(30)
+  recurso_id bigint
+  leida boolean [not null]
+  creada_en timestamp [not null]
+}

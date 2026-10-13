@@ -18,6 +18,7 @@ spring:
     init:
       # schema.sql y data.sql se ejecutan al arrancar (deben poder repetirse: DROP IF EXISTS / ON CONFLICT)
       mode: always
+      encoding: UTF-8
   servlet:
     multipart:
       max-file-size: 5MB
