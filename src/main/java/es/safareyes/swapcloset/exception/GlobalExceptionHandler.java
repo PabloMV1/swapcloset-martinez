@@ -15,6 +15,7 @@ import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.ServletRequestBindingException;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
@@ -101,7 +102,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class,
-            ServletRequestBindingException.class, PropertyReferenceException.class})
+            ServletRequestBindingException.class, PropertyReferenceException.class,
+            MissingServletRequestPartException.class})
     public ResponseEntity<ProblemDetail> peticionMalFormada(Exception e, HttpServletRequest r) {
         log.debug("Petición mal formada: {}", e.getMessage());
         return responder(HttpStatus.BAD_REQUEST, "Petición mal formada",
