@@ -16,6 +16,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
@@ -34,6 +35,11 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
 
     /** Tarea programada: préstamos vencidos y sin devolver. */
     List<Solicitud> findByTipoAndEstadoAndFechaFinLessThan(TipoSolicitud tipo, EstadoSolicitud estado, LocalDate hoy);
+
+    // ---------------- Q8: una solicitud con todas sus relaciones en una sola consulta ----------------
+
+    @EntityGraph(attributePaths = {"prenda", "solicitante", "propietaria", "prendaOfrecida"})
+    Optional<Solicitud> findConRelacionesById(Long id);
 
     // ---------------- Q6 + Q8: paginación con EntityGraph. Endpoint 11 ----------------
 
