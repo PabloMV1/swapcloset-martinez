@@ -1,0 +1,43 @@
+spring:
+  application:
+    name: swapcloset
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5433/swapcloset}
+    username: ${DB_USER:swapcloset}
+    password: ${DB_PASSWORD:swapcloset}
+  jpa:
+    # Fase 0-1: none. A partir de la Fase 2 cambiar a: validate
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Europe/Madrid
+  sql:
+    init:
+      # schema.sql y data.sql se ejecutan al arrancar (deben poder repetirse: DROP IF EXISTS / ON CONFLICT)
+      mode: always
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 25MB
+  jackson:
+    time-zone: Europe/Madrid
+
+server:
+  port: 8080
+
+app:
+  storage:
+    dir: ${STORAGE_DIR:./uploads}
+  jwt:
+    secret: ${JWT_SECRET:cambia-esta-clave-por-una-de-al-menos-32-caracteres}
+    expiration-minutes: 60
+  scheduling:
+    # segundo minuto hora dia mes diaSemana -> todos los dias a las 08:00
+    cron-solicitudes: "0 0 8 * * *"
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
