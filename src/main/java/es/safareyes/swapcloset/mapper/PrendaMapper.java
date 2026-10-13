@@ -1,5 +1,6 @@
 package es.safareyes.swapcloset.mapper;
 
+import es.safareyes.swapcloset.dto.projection.PrendaTarjetaView;
 import es.safareyes.swapcloset.dto.request.PrendaActualizarRequest;
 import es.safareyes.swapcloset.dto.request.PrendaCrearRequest;
 import es.safareyes.swapcloset.dto.response.PrendaDetalleResponse;
@@ -69,4 +70,8 @@ public interface PrendaMapper {
     @Mapping(target = "fotos", source = "prenda.fotos")
     PrendaDetalleResponse toDetalle(Prenda prenda, PropietariaResponse propietaria);
 
+    /** Desde la proyección ligera del perfil público (sin cargar la entidad). */
+    @Mapping(target = "id", source = "vista.id")
+    @Mapping(target = "fotoPortadaId", source = "fotoPortadaId")
+    PrendaResumenResponse toResumen(PrendaTarjetaView vista, Long fotoPortadaId);
 }

@@ -47,7 +47,7 @@ public interface PrendaRepository extends JpaRepository<Prenda, Long>, JpaSpecif
     @Query("select p from Prenda p where p.id = :id")
     Optional<Prenda> findDetalleById(@Param("id") Long id);
 
-    /** Q5 (interfaz) + Q6 (Pageable): prendas activas de una persona. Endpoint 7. */
+    /** Q5 (interfaz) + Q6 (Pageable): prendas visibles (no borrador) de una persona. Endpoint 7. */
     @Query(value = """
             select p.id as id, p.titulo as titulo, p.talla as talla, p.estado as estado,
                    p.modalidad as modalidad, c.nombre as categoria, u.username as propietaria,
@@ -56,7 +56,9 @@ public interface PrendaRepository extends JpaRepository<Prenda, Long>, JpaSpecif
             join p.categoria c
             join p.propietaria u
             where u.id = :propietariaId and p.activa = true
+              and p.disponibilidad <> es.safareyes.swapcloset.entity.Disponibilidad.BORRADOR
             """,
-            countQuery = "select count(p) from Prenda p where p.propietaria.id = :propietariaId and p.activa = true")
+            countQuery = "select count(p) from Prenda p where p.propietaria.id = :propietariaId and p.activa = true "
+                    + "and p.disponibilidad <> es.safareyes.swapcloset.entity.Disponibilidad.BORRADOR")
     Page<PrendaTarjetaView> listarTarjetasDePropietaria(@Param("propietariaId") Long propietariaId, Pageable pageable);
 }
