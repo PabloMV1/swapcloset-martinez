@@ -41,6 +41,14 @@ public interface SolicitudRepository extends JpaRepository<Solicitud, Long> {
     @EntityGraph(attributePaths = {"prenda", "solicitante", "propietaria", "prendaOfrecida"})
     Optional<Solicitud> findConRelacionesById(Long id);
 
+    // ---------------- Q2: ¿es participante? Lo usa @PreAuthorize (RN-08) ----------------
+
+    @Query("""
+            select count(s) > 0 from Solicitud s
+            where s.id = :id and (s.solicitante.id = :usuarioId or s.propietaria.id = :usuarioId)
+            """)
+    boolean participa(@Param("id") Long id, @Param("usuarioId") Long usuarioId);
+
     // ---------------- Q6 + Q8: paginación con EntityGraph. Endpoint 11 ----------------
 
     @EntityGraph(attributePaths = {"prenda", "solicitante", "propietaria", "prendaOfrecida"})

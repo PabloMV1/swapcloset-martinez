@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static es.safareyes.swapcloset.support.TestAuth.como;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -40,13 +41,13 @@ class SolicitudControllerTest {
     }
 
     private org.springframework.test.web.servlet.ResultActions crear(long usuario, String cuerpo) throws Exception {
-        return mvc.perform(post("/api/v1/solicitudes").header("X-Usuario-Id", usuario)
+        return mvc.perform(post("/api/v1/solicitudes").with(como(usuario))
                 .contentType(MediaType.APPLICATION_JSON).content(cuerpo));
     }
 
     private org.springframework.test.web.servlet.ResultActions accion(long usuario, long solicitud, String accion)
             throws Exception {
-        return mvc.perform(patch("/api/v1/solicitudes/" + solicitud + "/estado").header("X-Usuario-Id", usuario)
+        return mvc.perform(patch("/api/v1/solicitudes/" + solicitud + "/estado").with(como(usuario))
                 .contentType(MediaType.APPLICATION_JSON).content("{\"accion\":\"" + accion + "\"}"));
     }
 
@@ -114,9 +115,9 @@ class SolicitudControllerTest {
     }
 
     @Test
-    void sinCabeceraDeUsuarioDa400() throws Exception {
+    void sinTokenDa401() throws Exception {
         mvc.perform(post("/api/v1/solicitudes").contentType(MediaType.APPLICATION_JSON)
-                .content(prestamo(12, 1, 8))).andExpect(status().isBadRequest());
+                .content(prestamo(12, 1, 8))).andExpect(status().isUnauthorized());
     }
 
     @Test
@@ -128,14 +129,14 @@ class SolicitudControllerTest {
 
     @Test
     void listaLasEnviadas() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes?vista=ENVIADAS").header("X-Usuario-Id", 6))
+        mvc.perform(get("/api/v1/solicitudes?vista=ENVIADAS").with(como(6)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(3));
     }
 
     @Test
     void listaLasRecibidasFiltradasPorEstado() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes?vista=RECIBIDAS&estado=ACEPTADA").header("X-Usuario-Id", 7))
+        mvc.perform(get("/api/v1/solicitudes?vista=RECIBIDAS&estado=ACEPTADA").with(como(7)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(1))
                 .andExpect(jsonPath("$.content[0].id").value(4));
@@ -156,7 +157,7 @@ class SolicitudControllerTest {
     void aceptarRechazaLasDemasPendientesDeLaPrenda() throws Exception {
         crear(4, prestamo(12, 1, 8)).andExpect(status().isCreated());   // lucia_s compite con ana_g por la prenda 12
         accion(10, 2, "ACEPTAR").andExpect(status().isOk());           // marta_l acepta la de ana_g
-        mvc.perform(get("/api/v1/solicitudes?vista=ENVIADAS&estado=RECHAZADA").header("X-Usuario-Id", 4))
+        mvc.perform(get("/api/v1/solicitudes?vista=ENVIADAS&estado=RECHAZADA").with(como(4)))
                 .andExpect(jsonPath("$.content[?(@.prenda.id==12)]").isNotEmpty());
         assertEquals(Disponibilidad.PRESTADA, prendas.findById(12L).orElseThrow().getDisponibilidad());
     }
@@ -238,7 +239,7 @@ class SolicitudControllerTest {
 
     @Test
     void detalleSoloParaParticipantes() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes/3").header("X-Usuario-Id", 9)).andExpect(status().isOk());
-        mvc.perform(get("/api/v1/solicitudes/3").header("X-Usuario-Id", 12)).andExpect(status().isForbidden());
+        mvc.perform(get("/api/v1/solicitudes/3").with(como(9))).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/solicitudes/3").with(como(12))).andExpect(status().isForbidden());
     }
 }

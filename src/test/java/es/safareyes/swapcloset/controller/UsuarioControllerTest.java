@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static es.safareyes.swapcloset.support.TestAuth.como;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -23,7 +24,7 @@ class UsuarioControllerTest {
 
     @Test
     void perfilPublicoIncluyeEstilosReputacionYPrendas() throws Exception {
-        mvc.perform(get("/api/v1/usuarios/4").header("X-Usuario-Id", 5))
+        mvc.perform(get("/api/v1/usuarios/4").with(como(5)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("lucia_s"))
                 .andExpect(jsonPath("$.estilos.length()").value(3))
@@ -37,25 +38,25 @@ class UsuarioControllerTest {
     @Test
     void perfilPublicoNoMuestraBorradores() throws Exception {
         // la usuaria 6 tiene la prenda 20 en BORRADOR; sus demás prendas sí salen
-        mvc.perform(get("/api/v1/usuarios/6").header("X-Usuario-Id", 5))
+        mvc.perform(get("/api/v1/usuarios/6").with(como(5)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.prendas[?(@.id==20)]").isEmpty());
     }
 
     @Test
     void perfilInexistenteDa404() throws Exception {
-        mvc.perform(get("/api/v1/usuarios/9999").header("X-Usuario-Id", 5))
+        mvc.perform(get("/api/v1/usuarios/9999").with(como(5)))
                 .andExpect(status().isNotFound());
     }
 
     @Test
-    void sinCabeceraDeUsuarioDa400() throws Exception {
-        mvc.perform(get("/api/v1/usuarios/4")).andExpect(status().isBadRequest());
+    void sinTokenDa401() throws Exception {
+        mvc.perform(get("/api/v1/usuarios/4")).andExpect(status().isUnauthorized());
     }
 
     @Test
     void editarPerfilCambiaSoloLoInformado() throws Exception {
-        mvc.perform(put("/api/v1/usuarios/me").header("X-Usuario-Id", 8)
+        mvc.perform(put("/api/v1/usuarios/me").with(como(8))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"ciudad\":\"Cádiz\",\"estilosIds\":[1,2]}"))
                 .andExpect(status().isOk())
@@ -68,7 +69,7 @@ class UsuarioControllerTest {
 
     @Test
     void masDeCincoEstilosDa400() throws Exception {
-        mvc.perform(put("/api/v1/usuarios/me").header("X-Usuario-Id", 8)
+        mvc.perform(put("/api/v1/usuarios/me").with(como(8))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estilosIds\":[1,2,3,4,5,6]}"))
                 .andExpect(status().isBadRequest())
@@ -77,7 +78,7 @@ class UsuarioControllerTest {
 
     @Test
     void tallaDePantalonFueraDeRangoDa400() throws Exception {
-        mvc.perform(put("/api/v1/usuarios/me").header("X-Usuario-Id", 8)
+        mvc.perform(put("/api/v1/usuarios/me").with(como(8))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"tallaPantalon\":60}"))
                 .andExpect(status().isBadRequest())
@@ -86,7 +87,7 @@ class UsuarioControllerTest {
 
     @Test
     void estiloInexistenteDa422() throws Exception {
-        mvc.perform(put("/api/v1/usuarios/me").header("X-Usuario-Id", 8)
+        mvc.perform(put("/api/v1/usuarios/me").with(como(8))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"estilosIds\":[999]}"))
                 .andExpect(status().isUnprocessableEntity());
@@ -94,7 +95,7 @@ class UsuarioControllerTest {
 
     @Test
     void afinesExcluyeATodaPersonaSinEstilosComunesYAUnoMismo() throws Exception {
-        mvc.perform(get("/api/v1/usuarios/afines").header("X-Usuario-Id", 4))
+        mvc.perform(get("/api/v1/usuarios/afines").with(como(4)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isNotEmpty())
                 .andExpect(jsonPath("$[0].estilosComunes").isNumber())
@@ -104,7 +105,7 @@ class UsuarioControllerTest {
 
     @Test
     void afinesRespetaElLimite() throws Exception {
-        mvc.perform(get("/api/v1/usuarios/afines?limite=2").header("X-Usuario-Id", 4))
+        mvc.perform(get("/api/v1/usuarios/afines?limite=2").with(como(4)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2));
     }

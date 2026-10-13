@@ -10,6 +10,7 @@ import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -54,6 +55,11 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ConflictoException.class)
     public ResponseEntity<ProblemDetail> conflicto(ConflictoException e, HttpServletRequest r) {
         return responder(HttpStatus.CONFLICT, "Conflicto", e.getMessage(), r);
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ProblemDetail> noAutenticado(AuthenticationException e, HttpServletRequest r) {
+        return responder(HttpStatus.UNAUTHORIZED, "No autenticado", e.getMessage(), r);
     }
 
     @ExceptionHandler({ProhibidoException.class, AccessDeniedException.class})

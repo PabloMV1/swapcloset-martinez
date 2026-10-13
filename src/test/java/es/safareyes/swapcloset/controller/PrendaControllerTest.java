@@ -8,6 +8,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
+import static es.safareyes.swapcloset.support.TestAuth.como;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -65,8 +66,8 @@ class PrendaControllerTest {
     @Test
     void borradorSoloLoVeSuDuena() throws Exception {
         mvc.perform(get("/api/v1/prendas/20")).andExpect(status().isNotFound());
-        mvc.perform(get("/api/v1/prendas/20").header("X-Usuario-Id", 5)).andExpect(status().isNotFound());
-        mvc.perform(get("/api/v1/prendas/20").header("X-Usuario-Id", 6)).andExpect(status().isOk());
+        mvc.perform(get("/api/v1/prendas/20").with(como(5))).andExpect(status().isNotFound());
+        mvc.perform(get("/api/v1/prendas/20").with(como(6))).andExpect(status().isOk());
     }
 
     @Test
@@ -79,7 +80,7 @@ class PrendaControllerTest {
 
     @Test
     void crearDevuelve201ConLocationYQuedaEnBorrador() throws Exception {
-        mvc.perform(post("/api/v1/prendas").header("X-Usuario-Id", 4)
+        mvc.perform(post("/api/v1/prendas").with(como(4))
                         .contentType(MediaType.APPLICATION_JSON).content(CUERPO_VALIDO))
                 .andExpect(status().isCreated())
                 .andExpect(header().exists("Location"))
@@ -89,7 +90,7 @@ class PrendaControllerTest {
 
     @Test
     void crearConDatosInvalidosDa400ConListaDeCampos() throws Exception {
-        mvc.perform(post("/api/v1/prendas").header("X-Usuario-Id", 4)
+        mvc.perform(post("/api/v1/prendas").with(como(4))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"titulo\":\"\",\"talla\":\"S\"}"))
                 .andExpect(status().isBadRequest())
@@ -99,14 +100,14 @@ class PrendaControllerTest {
 
     @Test
     void modificarPrendaAjenaDa403() throws Exception {
-        mvc.perform(put("/api/v1/prendas/1").header("X-Usuario-Id", 5)
+        mvc.perform(put("/api/v1/prendas/1").with(como(5))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"titulo\":\"Hackeada\"}"))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void modificarParcialSoloCambiaLoInformado() throws Exception {
-        mvc.perform(put("/api/v1/prendas/1").header("X-Usuario-Id", 4)
+        mvc.perform(put("/api/v1/prendas/1").with(como(4))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"titulo\":\"Vaquera 90s\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.titulo").value("Vaquera 90s"))
@@ -115,25 +116,25 @@ class PrendaControllerTest {
 
     @Test
     void modificarPrendaPrestadaDa422() throws Exception {
-        mvc.perform(put("/api/v1/prendas/3").header("X-Usuario-Id", 5)
+        mvc.perform(put("/api/v1/prendas/3").with(como(5))
                         .contentType(MediaType.APPLICATION_JSON).content("{\"titulo\":\"Otro\"}"))
                 .andExpect(status().isUnprocessableEntity());
     }
 
     @Test
     void retirarDa204YDejaDeVerse() throws Exception {
-        mvc.perform(delete("/api/v1/prendas/12").header("X-Usuario-Id", 10)).andExpect(status().isNoContent());
+        mvc.perform(delete("/api/v1/prendas/12").with(como(10))).andExpect(status().isNoContent());
         mvc.perform(get("/api/v1/prendas/12")).andExpect(status().isNotFound());
     }
 
     @Test
     void moderadorPuedeRetirarPrendaAjena() throws Exception {
-        mvc.perform(delete("/api/v1/prendas/13").header("X-Usuario-Id", 2).header("X-Rol", "MODERADOR"))
+        mvc.perform(delete("/api/v1/prendas/13").with(como(2, "MODERADOR")))
                 .andExpect(status().isNoContent());
     }
 
     @Test
     void usuarioNormalNoPuedeRetirarPrendaAjena() throws Exception {
-        mvc.perform(delete("/api/v1/prendas/13").header("X-Usuario-Id", 5)).andExpect(status().isForbidden());
+        mvc.perform(delete("/api/v1/prendas/13").with(como(5))).andExpect(status().isForbidden());
     }
 }

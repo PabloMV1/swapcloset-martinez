@@ -2,7 +2,6 @@ package es.safareyes.swapcloset.controller;
 
 import es.safareyes.swapcloset.dto.request.MensajeCrearRequest;
 import es.safareyes.swapcloset.dto.response.MensajeResponse;
-import es.safareyes.swapcloset.entity.Rol;
 import es.safareyes.swapcloset.security.Actor;
 import es.safareyes.swapcloset.service.MensajeService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -15,9 +14,10 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
-/** TEMPORAL (Fase 3): el actor llega por cabeceras; en la Fase 4 saldrá del token JWT. */
 @RestController
 @RequestMapping("/api/v1/solicitudes/{solicitudId}/mensajes")
 @RequiredArgsConstructor
@@ -29,22 +29,22 @@ public class MensajeController {
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Enviar un mensaje (solo los dos participantes)")
+    @PreAuthorize("@seguridad.esParticipante(#solicitudId, #actor)")
     public MensajeResponse enviar(
             @PathVariable Long solicitudId,
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @Valid @RequestBody MensajeCrearRequest request) {
-        return mensajeService.enviar(new Actor(usuarioId, rol), solicitudId, request);
+        return mensajeService.enviar(actor, solicitudId, request);
     }
 
     @GetMapping
     @Operation(summary = "Conversación paginada, del mensaje más antiguo al más reciente")
+    @PreAuthorize("@seguridad.esParticipante(#solicitudId, #actor)")
     public PagedModel<MensajeResponse> listar(
             @PathVariable Long solicitudId,
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @ParameterObject @PageableDefault(size = 20, sort = "enviadoEn", direction = Sort.Direction.ASC)
             Pageable pageable) {
-        return new PagedModel<>(mensajeService.listar(new Actor(usuarioId, rol), solicitudId, pageable));
+        return new PagedModel<>(mensajeService.listar(actor, solicitudId, pageable));
     }
 }

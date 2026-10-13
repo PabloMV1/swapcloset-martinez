@@ -5,7 +5,6 @@ import es.safareyes.swapcloset.dto.request.SolicitudCrearRequest;
 import es.safareyes.swapcloset.dto.request.VistaSolicitudes;
 import es.safareyes.swapcloset.dto.response.SolicitudResponse;
 import es.safareyes.swapcloset.entity.EstadoSolicitud;
-import es.safareyes.swapcloset.entity.Rol;
 import es.safareyes.swapcloset.security.Actor;
 import es.safareyes.swapcloset.service.SolicitudService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -18,12 +17,13 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 
-/** TEMPORAL (Fase 3): el actor llega por cabeceras; en la Fase 4 saldrá del token JWT. */
 @RestController
 @RequestMapping("/api/v1/solicitudes")
 @RequiredArgsConstructor
@@ -36,10 +36,9 @@ public class SolicitudController {
     @Operation(summary = "Solicitar una prenda en intercambio o préstamo",
             description = "Intercambio: prendaOfrecidaId obligatoria. Préstamo: fechaInicio y fechaFin (máximo 30 días).")
     public ResponseEntity<SolicitudResponse> crear(
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @Valid @RequestBody SolicitudCrearRequest request) {
-        SolicitudResponse creada = solicitudService.crear(new Actor(usuarioId, rol), request);
+        SolicitudResponse creada = solicitudService.crear(actor, request);
         URI ubicacion = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(creada.id()).toUri();
         return ResponseEntity.created(ubicacion).body(creada);
     }
@@ -47,33 +46,32 @@ public class SolicitudController {
     @GetMapping
     @Operation(summary = "Mis solicitudes enviadas o recibidas, filtrables por estado y paginadas")
     public PagedModel<SolicitudResponse> listar(
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @RequestParam(defaultValue = "ENVIADAS") VistaSolicitudes vista,
             @RequestParam(required = false) EstadoSolicitud estado,
             @ParameterObject @PageableDefault(size = 20, sort = "creadaEn", direction = Sort.Direction.DESC)
             Pageable pageable) {
-        return new PagedModel<>(solicitudService.listar(new Actor(usuarioId, rol), vista, estado, pageable));
+        return new PagedModel<>(solicitudService.listar(actor, vista, estado, pageable));
     }
 
     @GetMapping("/{id}")
     @Operation(summary = "Detalle de una solicitud (solo sus dos participantes)")
+    @PreAuthorize("@seguridad.esParticipante(#id, #actor)")
     public SolicitudResponse obtener(
             @PathVariable Long id,
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol) {
-        return solicitudService.obtener(new Actor(usuarioId, rol), id);
+            @AuthenticationPrincipal Actor actor) {
+        return solicitudService.obtener(actor, id);
     }
 
     @PatchMapping("/{id}/estado")
     @Operation(summary = "Aceptar, rechazar, cancelar o finalizar una solicitud",
             description = "ACEPTAR y RECHAZAR: la propietaria, desde PENDIENTE. CANCELAR: quien solicitó, desde PENDIENTE. "
                     + "FINALIZAR: desde ACEPTADA o RETRASADA (préstamo: la propietaria; intercambio: cualquiera de las dos).")
+    @PreAuthorize("@seguridad.esParticipante(#id, #actor)")
     public SolicitudResponse cambiarEstado(
             @PathVariable Long id,
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @Valid @RequestBody SolicitudAccionRequest request) {
-        return solicitudService.cambiarEstado(new Actor(usuarioId, rol), id, request.accion());
+        return solicitudService.cambiarEstado(actor, id, request.accion());
     }
 }

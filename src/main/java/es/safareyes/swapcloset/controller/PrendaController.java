@@ -6,7 +6,6 @@ import es.safareyes.swapcloset.dto.response.PrendaDetalleResponse;
 import es.safareyes.swapcloset.dto.response.PrendaResumenResponse;
 import es.safareyes.swapcloset.entity.EstadoPrenda;
 import es.safareyes.swapcloset.entity.Modalidad;
-import es.safareyes.swapcloset.entity.Rol;
 import es.safareyes.swapcloset.security.Actor;
 import es.safareyes.swapcloset.service.PrendaService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -19,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.data.web.PagedModel;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
@@ -51,20 +51,17 @@ public class PrendaController {
     @Operation(summary = "Detalle de una prenda con sus fotos y la reputación de su propietaria")
     public PrendaDetalleResponse obtener(
             @PathVariable Long id,
-            @RequestHeader(value = "X-Usuario-Id", required = false) Long usuarioId,
-            @RequestHeader(value = "X-Rol", required = false, defaultValue = "USUARIO") Rol rol) {
-        // TEMPORAL (Fase 3): en la Fase 4 el actor sale del token JWT
-        Actor actor = usuarioId == null ? null : new Actor(usuarioId, rol);
+            @AuthenticationPrincipal Actor actor) {
+        // sin token (catálogo público) el actor es null
         return prendaService.obtener(id, actor);
     }
 
     @PostMapping
     @Operation(summary = "Publicar una prenda (queda en BORRADOR hasta que se suba la primera foto)")
     public ResponseEntity<PrendaDetalleResponse> crear(
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @Valid @RequestBody PrendaCrearRequest request) {
-        PrendaDetalleResponse creada = prendaService.crear(new Actor(usuarioId, rol), request);
+        PrendaDetalleResponse creada = prendaService.crear(actor, request);
         URI ubicacion = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(creada.id()).toUri();
         return ResponseEntity.created(ubicacion).body(creada);
     }
@@ -73,19 +70,17 @@ public class PrendaController {
     @Operation(summary = "Modificar una prenda propia (solo cambian los campos informados)")
     public PrendaDetalleResponse actualizar(
             @PathVariable Long id,
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol,
+            @AuthenticationPrincipal Actor actor,
             @Valid @RequestBody PrendaActualizarRequest request) {
-        return prendaService.actualizar(new Actor(usuarioId, rol), id, request);
+        return prendaService.actualizar(actor, id, request);
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Retirar una prenda (baja lógica)")
     public ResponseEntity<Void> retirar(
             @PathVariable Long id,
-            @RequestHeader("X-Usuario-Id") Long usuarioId,
-            @RequestHeader(value = "X-Rol", defaultValue = "USUARIO") Rol rol) {
-        prendaService.retirar(new Actor(usuarioId, rol), id);
+            @AuthenticationPrincipal Actor actor) {
+        prendaService.retirar(actor, id);
         return ResponseEntity.noContent().build();
     }
 }

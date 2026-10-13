@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static es.safareyes.swapcloset.support.TestAuth.como;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -24,13 +25,13 @@ class MensajeControllerTest {
 
     private org.springframework.test.web.servlet.ResultActions enviar(long usuario, long solicitud, String cuerpo)
             throws Exception {
-        return mvc.perform(post("/api/v1/solicitudes/" + solicitud + "/mensajes").header("X-Usuario-Id", usuario)
+        return mvc.perform(post("/api/v1/solicitudes/" + solicitud + "/mensajes").with(como(usuario))
                 .contentType(MediaType.APPLICATION_JSON).content(cuerpo));
     }
 
     @Test
     void laConversacionSeListaEnOrdenYPaginada() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes/3/mensajes").header("X-Usuario-Id", 9))
+        mvc.perform(get("/api/v1/solicitudes/3/mensajes").with(como(9)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.page.totalElements").value(3))
                 .andExpect(jsonPath("$.content[0].autor.username").value("javi_t"))
@@ -39,19 +40,19 @@ class MensajeControllerTest {
 
     @Test
     void unaPersonaAjenaNoVeLaConversacion() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes/3/mensajes").header("X-Usuario-Id", 12))
+        mvc.perform(get("/api/v1/solicitudes/3/mensajes").with(como(12)))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void laModeracionTampocoEntraEnElChat() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes/3/mensajes").header("X-Usuario-Id", 1).header("X-Rol", "ADMIN"))
+        mvc.perform(get("/api/v1/solicitudes/3/mensajes").with(como(1, "ADMIN")))
                 .andExpect(status().isForbidden());
     }
 
     @Test
     void solicitudInexistenteDa404() throws Exception {
-        mvc.perform(get("/api/v1/solicitudes/9999/mensajes").header("X-Usuario-Id", 9))
+        mvc.perform(get("/api/v1/solicitudes/9999/mensajes").with(como(9)))
                 .andExpect(status().isNotFound());
     }
 
@@ -80,4 +81,3 @@ class MensajeControllerTest {
         enviar(12, 3, "{\"texto\":\"hola\"}").andExpect(status().isForbidden());
     }
 }
-
