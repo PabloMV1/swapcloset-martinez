@@ -1,7 +1,0 @@
-# Perfil dev: arrancar con  ./mvnw spring-boot:run -Dspring-boot.run.profiles=dev
-app:
-  scheduling:
-    cron-solicitudes: "0 * * * * *"   # cada minuto, para probar la tarea
-logging:
-  level:
-    es.safareyes.swapcloset: DEBUG
