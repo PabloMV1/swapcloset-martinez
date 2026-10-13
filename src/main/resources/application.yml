@@ -8,7 +8,7 @@ spring:
   jpa:
     # Fase 0-1: none. A partir de la Fase 2 cambiar a: validate
     hibernate:
-      ddl-auto: none
+      ddl-auto: validate
     open-in-view: false
     properties:
       hibernate:
